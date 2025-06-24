@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import Index from "./pages/Index";
 import Agenda from "./pages/Agenda";
 import Clientes from "./pages/Clientes";
+import Historico from "./pages/Historico";
 import Financeiro from "./pages/Financeiro";
 import Relatorios from "./pages/Relatorios";
 import Chatbot from "./pages/Chatbot";
@@ -33,6 +34,7 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/agenda" element={<Agenda />} />
                   <Route path="/clientes" element={<Clientes />} />
+                  <Route path="/historico" element={<Historico />} />
                   <Route path="/financeiro" element={<Financeiro />} />
                   <Route path="/relatorios" element={<Relatorios />} />
                   <Route path="/chatbot" element={<Chatbot />} />

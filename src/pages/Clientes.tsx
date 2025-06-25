@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Search, Phone, Mail, MapPin } from "lucide-react";
-import { copyFile } from "fs";
+//import { copyFile } from "fs";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig"; 
 
 const mockClients = [
   {
@@ -46,8 +48,9 @@ const Clientes = () => {
     client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddClient = () => {
-    console.log("Novo cliente:", newClient);
+ const handleAddClient = async () => {
+  try {
+    await addDoc(collection(db, "clientes"), newClient);
     setIsDialogOpen(false);
     setNewClient({
       name: "",
@@ -56,7 +59,10 @@ const Clientes = () => {
       email: "",
       address: ""
     });
-  };
+  } catch (error) {
+    console.error("Erro ao adicionar cliente:", error);
+  }
+};
 
   return (
     <div className="space-y-6">

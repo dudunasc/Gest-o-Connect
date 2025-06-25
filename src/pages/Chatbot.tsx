@@ -69,7 +69,7 @@ const Chatbot = () => {
           Configure mensagens automáticas e envie comunicados para clientes
         </p>
       </div>
-
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <Card>

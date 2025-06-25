@@ -135,7 +135,6 @@ const Historico = () => {
         </div>
       </div>
 
-      {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -178,7 +177,6 @@ const Historico = () => {
         </Card>
       </div>
 
-      {/* Filtros */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -242,7 +240,6 @@ const Historico = () => {
         </CardContent>
       </Card>
 
-      {/* Tabela de Histórico */}
       <Card>
         <CardHeader>
           <CardTitle>Histórico Detalhado</CardTitle>

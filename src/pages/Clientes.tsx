@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Search, Phone, Mail, MapPin } from "lucide-react";
+import { copyFile } from "fs";
 
 const mockClients = [
   {
@@ -33,6 +34,7 @@ const Clientes = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newClient, setNewClient] = useState({
     name: "",
+    cpf: "",
     phone: "",
     email: "",
     address: ""
@@ -49,6 +51,7 @@ const Clientes = () => {
     setIsDialogOpen(false);
     setNewClient({
       name: "",
+      cpf: "",
       phone: "",
       email: "",
       address: ""
@@ -85,7 +88,17 @@ const Clientes = () => {
                   placeholder="Nome completo"
                 />
               </div>
-              
+
+               <div>
+                <Label htmlFor="cpf">CPF *</Label>
+                <Input
+                  id="cpf"
+                  value={newClient.cpf}
+                  onChange={(e) => setNewClient({...newClient, cpf: e.target.value})}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+
               <div>
                 <Label htmlFor="phone">Telefone *</Label>
                 <Input
@@ -130,7 +143,6 @@ const Clientes = () => {
         </Dialog>
       </div>
 
-      {/* Search */}
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
@@ -145,7 +157,6 @@ const Clientes = () => {
         </CardContent>
       </Card>
 
-      {/* Clients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredClients.map((client) => (
           <Card key={client.id} className="hover:shadow-lg transition-shadow">

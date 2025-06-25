@@ -1,35 +1,23 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Search, Phone, Mail, MapPin } from "lucide-react";
-//import { copyFile } from "fs";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig"; 
+import { collection, addDoc, getDocs } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
-const mockClients = [
-  {
-    id: 1,
-    name: "Max Steel",
-    phone: "(11) 99999-9999",
-    email: "max@example.com",
-    address: "Rua Xamapito, 123 - São Paulo",
-    services: 5,
-    lastService: "23/04/2024"
-  },
-  {
-    id: 2,
-    name: "Erica Santos",
-    phone: "(11) 88888-8888",
-    email: "erica@example.com",
-    address: "Rua Dulcinéia da 2ª direita, 456 - São Paulo",
-    services: 3,
-    lastService: "03/05/2025"
-  }
-];
+interface Client {
+  id: string;
+  name: string;
+  cpf: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  services?: number;
+  lastService?: string;
+}
 
 const Clientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,28 +29,48 @@ const Clientes = () => {
     email: "",
     address: ""
   });
+  const [clients, setClients] = useState<Client[]>([]);
 
-  const filteredClients = mockClients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    const fetchClients = async () => {
+      const querySnapshot = await getDocs(collection(db, "clientes"));
+      const clientsList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Client[]
+      setClients(clientsList);
+    };
+    fetchClients();
+  }, []);
+
+  const handleAddClient = async () => {
+    try {
+      await addDoc(collection(db, "clientes"), newClient);
+      setIsDialogOpen(false);
+      setNewClient({
+        name: "",
+        cpf: "",
+        phone: "",
+        email: "",
+        address: ""
+      });
+
+      const querySnapshot = await getDocs(collection(db, "clientes"));
+      const clientsList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Client[];
+      setClients(clientsList);
+    } catch (error) {
+      console.error("Erro ao adicionar cliente:", error);
+    }
+  };
+
+  const filteredClients = clients.filter(client =>
+    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.phone?.includes(searchTerm) ||
+    client.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
- const handleAddClient = async () => {
-  try {
-    await addDoc(collection(db, "clientes"), newClient);
-    setIsDialogOpen(false);
-    setNewClient({
-      name: "",
-      cpf: "",
-      phone: "",
-      email: "",
-      address: ""
-    });
-  } catch (error) {
-    console.error("Erro ao adicionar cliente:", error);
-  }
-};
 
   return (
     <div className="space-y-6">
@@ -90,52 +98,47 @@ const Clientes = () => {
                 <Input
                   id="name"
                   value={newClient.name}
-                  onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
                   placeholder="Nome completo"
                 />
               </div>
-
-               <div>
+              <div>
                 <Label htmlFor="cpf">CPF *</Label>
                 <Input
                   id="cpf"
                   value={newClient.cpf}
-                  onChange={(e) => setNewClient({...newClient, cpf: e.target.value})}
+                  onChange={(e) => setNewClient({ ...newClient, cpf: e.target.value })}
                   placeholder="000.000.000-00"
                 />
               </div>
-
               <div>
                 <Label htmlFor="phone">Telefone *</Label>
                 <Input
                   id="phone"
                   value={newClient.phone}
-                  onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
                   placeholder="(11) 99999-9999"
                 />
               </div>
-
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={newClient.email}
-                  onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
                   placeholder="email@exemplo.com"
                 />
               </div>
-
               <div>
                 <Label htmlFor="address">Endereço</Label>
                 <Input
                   id="address"
                   value={newClient.address}
-                  onChange={(e) => setNewClient({...newClient, address: e.target.value})}
+                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
                   placeholder="Endereço completo"
                 />
               </div>
-
               <div className="flex gap-2 pt-4">
                 <Button variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
@@ -174,21 +177,18 @@ const Clientes = () => {
                 <Phone className="h-4 w-4" />
                 {client.phone}
               </div>
-              
               {client.email && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="h-4 w-4" />
                   {client.email}
                 </div>
               )}
-              
               {client.address && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4" />
                   {client.address}
                 </div>
               )}
-              
               <div className="pt-4 border-t">
                 <div className="flex justify-between text-sm">
                   <span>Serviços realizados:</span>
@@ -199,7 +199,6 @@ const Clientes = () => {
                   <span className="font-medium">{client.lastService}</span>
                 </div>
               </div>
-              
               <Button variant="outline" className="w-full mt-4">
                 Ver Detalhes
               </Button>

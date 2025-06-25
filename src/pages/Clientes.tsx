@@ -22,6 +22,7 @@ interface Client {
 const Clientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [newClient, setNewClient] = useState({
     name: "",
     cpf: "",
@@ -34,10 +35,19 @@ const Clientes = () => {
   useEffect(() => {
     const fetchClients = async () => {
       const querySnapshot = await getDocs(collection(db, "clientes"));
-      const clientsList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Client[]
+      const clientsList = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name ?? "",
+          cpf: data.cpf ?? "",
+          phone: data.phone ?? "",
+          email: data.email ?? "",
+          address: data.address ?? "",
+          services: data.services ?? 0,
+          lastService: data.lastService ?? ""
+        } as Client;
+      });
       setClients(clientsList);
     };
     fetchClients();
@@ -56,11 +66,23 @@ const Clientes = () => {
       });
 
       const querySnapshot = await getDocs(collection(db, "clientes"));
-      const clientsList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Client[];
+      const clientsList = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name ?? "",
+          cpf: data.cpf ?? "",
+          phone: data.phone ?? "",
+          email: data.email ?? "",
+          address: data.address ?? "",
+          services: data.services ?? 0,
+          lastService: data.lastService ?? ""
+        } as Client;
+      });
       setClients(clientsList);
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
     } catch (error) {
       console.error("Erro ao adicionar cliente:", error);
     }
@@ -73,150 +95,157 @@ const Clientes = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Clientes</h1>
-          <p className="text-muted-foreground">
-            Gerencie sua base de clientes
-          </p>
+    <>
+      {showSuccess && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow z-50 transition">
+          Cliente cadastrado com sucesso!
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Cliente
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nome *</Label>
-                <Input
-                  id="name"
-                  value={newClient.name}
-                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                  placeholder="Nome completo"
-                />
-              </div>
-              <div>
-                <Label htmlFor="cpf">CPF *</Label>
-                <Input
-                  id="cpf"
-                  value={newClient.cpf}
-                  onChange={(e) => setNewClient({ ...newClient, cpf: e.target.value })}
-                  placeholder="000.000.000-00"
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Telefone *</Label>
-                <Input
-                  id="phone"
-                  value={newClient.phone}
-                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newClient.email}
-                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="address">Endereço</Label>
-                <Input
-                  id="address"
-                  value={newClient.address}
-                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
-                  placeholder="Endereço completo"
-                />
-              </div>
-              <div className="flex gap-2 pt-4">
-                <Button variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button className="flex-1" onClick={handleAddClient}>
-                  Cadastrar
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar clientes por nome, telefone ou email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+      )}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Clientes</h1>
+            <p className="text-muted-foreground">
+              Gerencie sua base de clientes
+            </p>
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredClients.map((client) => (
-          <Card key={client.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="text-lg">{client.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                {client.phone}
-              </div>
-              {client.email && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  {client.email}
-                </div>
-              )}
-              {client.address && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  {client.address}
-                </div>
-              )}
-              <div className="pt-4 border-t">
-                <div className="flex justify-between text-sm">
-                  <span>Serviços realizados:</span>
-                  <span className="font-medium">{client.services}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Último serviço:</span>
-                  <span className="font-medium">{client.lastService}</span>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full mt-4">
-                Ver Detalhes
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Cliente
               </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Nome *</Label>
+                  <Input
+                    id="name"
+                    value={newClient.name}
+                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                    placeholder="Nome completo"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cpf">CPF *</Label>
+                  <Input
+                    id="cpf"
+                    value={newClient.cpf}
+                    onChange={(e) => setNewClient({ ...newClient, cpf: e.target.value })}
+                    placeholder="000.000.000-00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Telefone *</Label>
+                  <Input
+                    id="phone"
+                    value={newClient.phone}
+                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="address">Endereço</Label>
+                  <Input
+                    id="address"
+                    value={newClient.address}
+                    onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                    placeholder="Endereço completo"
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button className="flex-1" onClick={handleAddClient}>
+                    Cadastrar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      {filteredClients.length === 0 && (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground py-8">
-              {searchTerm ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
-            </p>
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar clientes por nome, telefone ou email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </CardContent>
         </Card>
-      )}
-    </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredClients.map((client) => (
+            <Card key={client.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg">{client.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Phone className="h-4 w-4" />
+                  {client.phone}
+                </div>
+                {client.email && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    {client.email}
+                  </div>
+                )}
+                {client.address && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    {client.address}
+                  </div>
+                )}
+                <div className="pt-4 border-t">
+                  <div className="flex justify-between text-sm">
+                    <span>Serviços realizados:</span>
+                    <span className="font-medium">{client.services}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Último serviço:</span>
+                    <span className="font-medium">{client.lastService}</span>
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full mt-4">
+                  Ver Detalhes
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {filteredClients.length === 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground py-8">
+                {searchTerm ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </>
   );
 };
 

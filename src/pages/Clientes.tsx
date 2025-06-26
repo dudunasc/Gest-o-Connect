@@ -19,6 +19,14 @@ interface Client {
   lastService?: string;
 }
 
+function formatPhone(value: string) {
+  let cleaned = value.replace(/\D/g, "").slice(0, 11);
+  if (cleaned.length <= 2) return `(${cleaned}`;
+  if (cleaned.length <= 7)
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+  return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+}
+
 const Clientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -31,7 +39,6 @@ const Clientes = () => {
     address: ""
   });
   const [clients, setClients] = useState<Client[]>([]);
-
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -57,6 +64,10 @@ const Clientes = () => {
   }, []);
 
   const handleAddClient = async () => {
+    if (newClient.phone.replace(/\D/g, "").length !== 11) {
+      alert("O telefone deve conter 11 dígitos.");
+      return;
+    }
     try {
       await addDoc(collection(db, "clientes"), newClient);
       setIsDialogOpen(false);
@@ -188,8 +199,12 @@ const Clientes = () => {
                   <Input
                     id="phone"
                     value={newClient.phone}
-                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                    onChange={(e) => {
+                      const formatted = formatPhone(e.target.value);
+                      setNewClient({ ...newClient, phone: formatted });
+                    }}
                     placeholder="(11) 99999-9999"
+                    maxLength={16}
                   />
                 </div>
                 <div>
@@ -301,6 +316,5 @@ const Clientes = () => {
       </div>
     </>
   );
-};
-
+}
 export default Clientes;

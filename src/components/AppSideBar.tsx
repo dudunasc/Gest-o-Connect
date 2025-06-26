@@ -7,7 +7,8 @@ import {
   MessageSquare, 
   Settings,
   BarChart3,
-  Clock
+  Clock,
+  Scissors
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -38,6 +39,11 @@ const menuItems = [
     title: "Clientes",
     url: "/clientes",
     icon: Users,
+  },
+   {
+    title: "Meus Serviços",
+    url: "/servicos",
+    icon: Scissors,
   },
   {
     title: "Histórico de Serviços",

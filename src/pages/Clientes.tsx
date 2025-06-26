@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Search, Phone, Mail, MapPin } from "lucide-react";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 interface Client {
@@ -85,6 +85,16 @@ const Clientes = () => {
       setTimeout(() => setShowSuccess(false), 2000);
     } catch (error) {
       console.error("Erro ao adicionar cliente:", error);
+    }
+  };
+
+  // Função para excluir cliente
+  const handleDeleteClient = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "clientes", id));
+      setClients((prev) => prev.filter((client) => client.id !== id));
+    } catch (error) {
+      console.error("Erro ao excluir cliente:", error);
     }
   };
 
@@ -229,6 +239,13 @@ const Clientes = () => {
                 </div>
                 <Button variant="outline" className="w-full mt-4">
                   Ver Detalhes
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="w-full mt-2"
+                  onClick={() => handleDeleteClient(client.id)}
+                >
+                  Excluir
                 </Button>
               </CardContent>
             </Card>

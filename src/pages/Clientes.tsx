@@ -32,6 +32,9 @@ const Clientes = () => {
   });
   const [clients, setClients] = useState<Client[]>([]);
 
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   useEffect(() => {
     const fetchClients = async () => {
       const querySnapshot = await getDocs(collection(db, "clientes"));
@@ -88,7 +91,6 @@ const Clientes = () => {
     }
   };
 
-  // Função para excluir cliente
   const handleDeleteClient = async (id: string) => {
     try {
       await deleteDoc(doc(db, "clientes", id));
@@ -111,6 +113,38 @@ const Clientes = () => {
           Cliente cadastrado com sucesso!
         </div>
       )}
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir Cliente</DialogTitle>
+          </DialogHeader>
+          <p>Tem certeza que deseja excluir o cliente <b>{clientToDelete?.name}</b>?</p>
+          <div className="flex gap-2 pt-4">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={async () => {
+                if (clientToDelete) {
+                  await handleDeleteClient(clientToDelete.id);
+                  setIsDeleteDialogOpen(false);
+                  setClientToDelete(null);
+                }
+              }}
+            >
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -243,7 +277,10 @@ const Clientes = () => {
                 <Button
                   variant="destructive"
                   className="w-full mt-2"
-                  onClick={() => handleDeleteClient(client.id)}
+                  onClick={() => {
+                    setClientToDelete(client);
+                    setIsDeleteDialogOpen(true);
+                  }}
                 >
                   Excluir
                 </Button>

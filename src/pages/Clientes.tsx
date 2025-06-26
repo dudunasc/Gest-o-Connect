@@ -193,8 +193,9 @@ const Clientes = () => {
                   <Input
                     id="name"
                     value={newClient.name}
-                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value.slice(0, 30) })}
                     placeholder="Nome completo"
+                    maxLength={30}
                   />
                 </div>
                 <div>

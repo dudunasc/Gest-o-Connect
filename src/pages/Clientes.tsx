@@ -27,6 +27,14 @@ function formatPhone(value: string) {
   return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
 }
 
+function formatCPF(value: string) {
+  let cleaned = value.replace(/\D/g, "").slice(0, 11);
+  if (cleaned.length <= 3) return cleaned;
+  if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
+  if (cleaned.length <= 9) return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6)}`;
+  return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9)}`;
+}
+
 const Clientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -66,6 +74,10 @@ const Clientes = () => {
   const handleAddClient = async () => {
     if (newClient.phone.replace(/\D/g, "").length !== 11) {
       alert("O telefone deve conter 11 dígitos.");
+      return;
+    }
+    if (newClient.cpf.replace(/\D/g, "").length !== 11) {
+      alert("O CPF deve conter 11 dígitos.");
       return;
     }
     try {
@@ -190,8 +202,12 @@ const Clientes = () => {
                   <Input
                     id="cpf"
                     value={newClient.cpf}
-                    onChange={(e) => setNewClient({ ...newClient, cpf: e.target.value })}
+                    onChange={(e) => {
+                      const formatted = formatCPF(e.target.value);
+                      setNewClient({ ...newClient, cpf: formatted });
+                    }}
                     placeholder="000.000.000-00"
+                    maxLength={14}
                   />
                 </div>
                 <div>
@@ -317,4 +333,5 @@ const Clientes = () => {
     </>
   );
 }
+
 export default Clientes;

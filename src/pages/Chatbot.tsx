@@ -41,22 +41,27 @@ const Chatbot = () => {
   const [servicos, setServicos] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchClients = async () => {
-      const querySnapshot = await getDocs(collection(db, "clientes"));
-      const clientsList = querySnapshot.docs.map(doc => ({
+    const fetchData = async () => {
+      const agendSnap = await getDocs(collection(db, "agendamentos"));
+      const agendamentos = agendSnap.docs.map(doc => ({
         id: doc.id,
-        name: doc.data().name ?? "",
-        phone: doc.data().phone?.replace(/\D/g, "") ?? "",
-        services: doc.data().services ?? [],
-        historico: doc.data().historico ?? []
+        ...doc.data()
       }));
-      setClients(clientsList);
-    };
-    fetchClients();
-  }, []);
 
-  useEffect(() => {
-    const fetchServicos = async () => {
+      const clientesSnap = await getDocs(collection(db, "clientes"));
+      const clientsList = clientesSnap.docs.map(doc => {
+        const agsConcluidos = agendamentos.filter(
+          (a: any) => a.client === doc.id && (a.status || "").trim().toLowerCase() === "concluído"
+        );
+        return {
+          id: doc.id,
+          name: doc.data().name ?? "",
+          phone: doc.data().phone?.replace(/\D/g, "") ?? "",
+          concluidos: agsConcluidos.map((a: any) => a.service)
+        };
+      });
+      setClients(clientsList);
+
       const servicosSnap = await getDocs(collection(db, "servicos"));
       const servicosList = servicosSnap.docs.map(doc => ({
         id: doc.id,
@@ -64,21 +69,13 @@ const Chatbot = () => {
       }));
       setServicos(servicosList);
     };
-    fetchServicos();
+    fetchData();
   }, []);
 
   const filteredClients = clients.filter(client => {
-    if (serviceFilter === "all") return true;
-    if (Array.isArray(client.services)) {
-      return client.services.includes(serviceFilter);
-    }
-    if (typeof client.services === "string") {
-      return client.services.toLowerCase().includes(serviceFilter.toLowerCase());
-    }
-    if (Array.isArray(client.historico)) {
-      return client.historico.some((h: any) => h.procedimento === serviceFilter);
-    }
-    return false;
+    if (serviceFilter === "all") return client.concluidos.length > 0;
+    const servicoId = servicos.find(s => s.tipo === serviceFilter)?.id;
+    return client.concluidos.includes(servicoId);
   });
 
   const handleSendMessage = () => {

@@ -8,7 +8,7 @@ import {
   Settings,
   BarChart3,
   Clock,
-  Scissors
+  BriefcaseBusiness
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -43,7 +43,7 @@ const menuItems = [
    {
     title: "Meus Serviços",
     url: "/servicos",
-    icon: Scissors,
+    icon: BriefcaseBusiness,
   },
   {
     title: "Histórico de Serviços",

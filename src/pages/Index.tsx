@@ -5,6 +5,11 @@ import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tool
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
+const meses = [
+  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+  "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+];
+
 const dashboardDataDefault = {
   stats: [
     {
@@ -34,21 +39,6 @@ const dashboardDataDefault = {
   ]
 };
 
-const chartData = [
-  { month: "Jan", value: 1000 },
-  { month: "Fev", value: 1200 },
-  { month: "Mar", value: 900 },
-  { month: "Abr", value: 1800 },
-  { month: "Mai", value: 2500 },
-  { month: "Jun", value: 2200 },
-  { month: "Jul", value: 3064 },
-  { month: "Ago", value: 2800 },
-  { month: "Set", value: 3200 },
-  { month: "Out", value: 2900 },
-  { month: "Nov", value: 3400 },
-  { month: "Dez", value: 3100 }
-];
-
 const Index = () => {
   const [clientCount, setClientCount] = useState(0);
   const [serviceCount, setServiceCount] = useState(0);
@@ -57,6 +47,7 @@ const Index = () => {
   const [ultimoServico, setUltimoServico] = useState<any>(null);
   const [clients, setClients] = useState<any[]>([]);
   const [serviceTypes, setServiceTypes] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<{ month: string, value: number }[]>([]);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -128,7 +119,6 @@ const Index = () => {
         return;
       }
 
-      // Ordena por data e hora (mais recente primeiro)
       agendConcluidos.sort((a, b) => {
         const dateA = new Date(`${a.date}T${a.time || "00:00"}`);
         const dateB = new Date(`${b.date}T${b.time || "00:00"}`);
@@ -149,11 +139,44 @@ const Index = () => {
       });
     };
 
-    // Só busca quando já tiver clientes e tipos de serviço carregados
     if (clients.length > 0 && serviceTypes.length > 0) {
       fetchUltimoServico();
     }
   }, [clients, serviceTypes]);
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      const querySnapshot = await getDocs(collection(db, "agendamentos"));
+      const valoresPorMes: { [key: string]: number } = {};
+
+      querySnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (
+          (data.status || "").trim().toLowerCase() === "concluído" &&
+          data.valor &&
+          data.date
+        ) {
+          const dataDate = new Date(data.date);
+          const mes = dataDate.getMonth();
+          const ano = dataDate.getFullYear();
+          const chave = `${ano}-${mes}`;
+          valoresPorMes[chave] = (valoresPorMes[chave] || 0) + Number(data.valor);
+        }
+      });
+
+      const now = new Date();
+      const anoAtual = now.getFullYear();
+      const chart = meses.map((nomeMes, idx) => {
+        const chave = `${anoAtual}-${idx}`;
+        return {
+          month: nomeMes,
+          value: valoresPorMes[chave] || 0
+        };
+      });
+      setChartData(chart);
+    };
+    fetchChartData();
+  }, []);
 
   const dashboardData = {
     ...dashboardDataDefault,

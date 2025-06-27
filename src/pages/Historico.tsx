@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, User, Calendar, DollarSign, Scissors, BarChart3, Filter, X } from "lucide-react";
+import { Search, User, Calendar, DollarSign, BriefcaseBusiness, BarChart3, Filter, X } from "lucide-react";
 
 const statusOptions = ["Todos", "Concluído", "Cancelado", "Agendado"];
 
@@ -95,7 +95,7 @@ const Historico = () => {
             <CardTitle className="text-sm font-medium">
               Total de Serviços
             </CardTitle>
-            <Scissors className="h-4 w-4 text-muted-foreground" />
+            <BriefcaseBusiness className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{filteredHistorico.length}</div>

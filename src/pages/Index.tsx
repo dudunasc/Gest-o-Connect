@@ -21,7 +21,7 @@ const dashboardDataDefault = {
     },
     {
       title: "Faturamento mensal",
-      value: "R$ 3.064,00",
+      value: "R$ 0,00",
       icon: DollarSign,
       color: "bg-blue-500"
     },
@@ -64,6 +64,7 @@ const Index = () => {
   const [clientCount, setClientCount] = useState(0);
   const [serviceCount, setServiceCount] = useState(0);
   const [agendadosCount, setAgendadosCount] = useState(0);
+  const [faturamentoMensal, setFaturamentoMensal] = useState(0);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -93,6 +94,34 @@ const Index = () => {
     fetchAgendados();
   }, []);
 
+  useEffect(() => {
+    const fetchFaturamento = async () => {
+      const querySnapshot = await getDocs(collection(db, "agendamentos"));
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      let total = 0;
+      querySnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (
+          (data.status || "").trim().toLowerCase() === "concluído" &&
+          data.valor &&
+          data.date
+        ) {
+          const dataDate = new Date(data.date);
+          if (
+            dataDate.getMonth() === currentMonth &&
+            dataDate.getFullYear() === currentYear
+          ) {
+            total += Number(data.valor);
+          }
+        }
+      });
+      setFaturamentoMensal(total);
+    };
+    fetchFaturamento();
+  }, []);
+
   const dashboardData = {
     ...dashboardDataDefault,
     stats: dashboardDataDefault.stats.map((stat) => {
@@ -104,6 +133,9 @@ const Index = () => {
       }
       if (stat.title === "Serviços agendados") {
         return { ...stat, value: agendadosCount.toString() };
+      }
+      if (stat.title === "Faturamento mensal") {
+        return { ...stat, value: `R$ ${faturamentoMensal.toFixed(2).replace('.', ',')}` };
       }
       return stat;
     }),

@@ -30,7 +30,7 @@ const Agenda = () => {
 
   useEffect(() => {
     const fetchServices = async () => {
-      const querySnapshot = await getDocs(collection(db, "servicos"));
+      const querySnapshot = await getDocs(collection(db, "agendamentos"));
       const data = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -70,7 +70,7 @@ const Agenda = () => {
     }
 
     try {
-      await addDoc(collection(db, "servicos"), {
+      await addDoc(collection(db, "agendamentos"), {
         client: newService.client,
         service: newService.service,
         date: newService.date,
@@ -78,7 +78,7 @@ const Agenda = () => {
         location: newService.location,
         status: "Agendado"
       });
-      const querySnapshot = await getDocs(collection(db, "servicos"));
+      const querySnapshot = await getDocs(collection(db, "agendamentos"));
       const data = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,6 @@ const Agenda = () => {
       alert("Preencha todos os campos obrigatórios!");
       return;
     }
-
     try {
       await addDoc(collection(db, "agendamentos"), {
         client: newService.client,
@@ -94,6 +93,20 @@ const Agenda = () => {
       });
     } catch (error) {
       alert("Erro ao salvar agendamento!");
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      const agendamentoRef = doc(db, "agendamentos", id);
+      await updateDoc(agendamentoRef, { status });
+      setServices((prev) =>
+        prev.map((service) =>
+          service.id === id ? { ...service, status } : service
+        )
+      );
+    } catch (error) {
+      alert("Erro ao atualizar status!");
     }
   };
 
@@ -264,10 +277,38 @@ const Agenda = () => {
                           <p className="text-sm text-muted-foreground">{service.time}</p>
                           <p className="text-sm text-muted-foreground">{service.location}</p>
                         </div>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          {service.status}
-                        </span>
+                        {service.status === "Concluído" ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {service.status}
+                          </span>
+                        ) : service.status === "Cancelado" ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            {service.status}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            {service.status}
+                          </span>
+                        )}
                       </div>
+                      {service.status === "Agendado" && (
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => handleUpdateStatus(service.id, "Concluído")}
+                          >
+                            Concluir
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleUpdateStatus(service.id, "Cancelado")}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))
               )}

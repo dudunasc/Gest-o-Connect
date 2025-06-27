@@ -61,7 +61,7 @@ const menuItems = [
     icon: BarChart3,
   },
   {
-    title: "Chatbot",
+    title: "Campanha",
     url: "/chatbot",
     icon: MessageSquare,
   },

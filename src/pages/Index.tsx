@@ -27,7 +27,7 @@ const dashboardDataDefault = {
     },
     {
       title: "Serviços agendados",
-      value: "27",
+      value: "0",
       icon: Clock,
       color: "bg-blue-500"
     }
@@ -63,6 +63,7 @@ const recentServices = [
 const Index = () => {
   const [clientCount, setClientCount] = useState(0);
   const [serviceCount, setServiceCount] = useState(0);
+  const [agendadosCount, setAgendadosCount] = useState(0);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -80,6 +81,18 @@ const Index = () => {
     fetchServices();
   }, []);
 
+  useEffect(() => {
+    const fetchAgendados = async () => {
+      const querySnapshot = await getDocs(collection(db, "agendamentos"));
+      const agendados = querySnapshot.docs.filter(doc => {
+        const data = doc.data();
+        return (data.status || "").trim().toLowerCase() === "agendado";
+      });
+      setAgendadosCount(agendados.length);
+    };
+    fetchAgendados();
+  }, []);
+
   const dashboardData = {
     ...dashboardDataDefault,
     stats: dashboardDataDefault.stats.map((stat) => {
@@ -88,6 +101,9 @@ const Index = () => {
       }
       if (stat.title === "Nossos serviços") {
         return { ...stat, value: serviceCount.toString() };
+      }
+      if (stat.title === "Serviços agendados") {
+        return { ...stat, value: agendadosCount.toString() };
       }
       return stat;
     }),

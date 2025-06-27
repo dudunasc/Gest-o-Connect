@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, Edit, Trash2, Scissors } from "lucide-react";
+import { Plus, Edit, Trash2, BriefcaseBusiness } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/firebaseConfig";
@@ -43,7 +43,7 @@ const Servicos = () => {
     }
   });
 
-  // Buscar serviços do Firestore ao carregar
+  
   useEffect(() => {
     const fetchServicos = async () => {
       const servicosCol = collection(db, "servicos");
@@ -57,7 +57,7 @@ const Servicos = () => {
     fetchServicos();
   }, []);
 
-  // Adicionar ou atualizar serviço no Firestore
+ 
   const onSubmit = async (data: any) => {
     if (editingServico) {
       const servicoRef = doc(db, "servicos", editingServico.id);
@@ -94,7 +94,7 @@ const Servicos = () => {
     setIsDialogOpen(true);
   };
 
-  // Remover serviço do Firestore
+  
   const handleDelete = async (id: string) => {
     await deleteDoc(doc(db, "servicos", id));
     setServicos(prev => prev.filter(servico => servico.id !== id));
@@ -253,7 +253,7 @@ const Servicos = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="flex items-center gap-2">
-            <Scissors className="h-5 w-5" />
+            <BriefcaseBusiness className="h-5 w-5" />
             Lista de Serviços
           </CardTitle>
           <div className="text-sm text-muted-foreground">
@@ -317,7 +317,7 @@ const Servicos = () => {
 
           {servicos.length === 0 && (
             <div className="text-center text-muted-foreground py-8">
-              <Scissors className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <BriefcaseBusiness className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p>Nenhum serviço cadastrado</p>
               <p className="text-sm">Clique em "Adicionar" para criar seu primeiro serviço</p>
             </div>

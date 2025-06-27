@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, User, Calendar, DollarSign, Scissors, BarChart3, Filter, X } from "lucide-react";
 
-const tiposServico = ["Todos", "Desodorização", "Higienização", "Limpeza a Vapor", "Limpeza a Seco", "Limpeza com extração", "Dedetização"];
 const statusOptions = ["Todos", "Concluído", "Cancelado", "Agendado"];
 
 const Historico = () => {
@@ -21,7 +20,7 @@ const Historico = () => {
   const [filterService, setFilterService] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
 
-  // Buscar agendamentos, clientes e serviços
+  
   useEffect(() => {
     const fetchData = async () => {
       const agendSnap = await getDocs(collection(db, "agendamentos"));
@@ -37,7 +36,7 @@ const Historico = () => {
     fetchData();
   }, []);
 
-  // Função para buscar nome do cliente e tipo do serviço
+  
   const getClienteNome = (id: string) => clients.find(c => c.id === id)?.name || "Cliente";
   const getClienteTelefone = (id: string) => clients.find(c => c.id === id)?.telefone || "";
   const getServicoTipo = (id: string) => serviceTypes.find(s => s.id === id)?.tipo || "Serviço";
@@ -171,9 +170,12 @@ const Historico = () => {
                 <SelectValue placeholder="Tipo de serviço" />
               </SelectTrigger>
               <SelectContent>
-                {tiposServico.map((tipo) => (
-                  <SelectItem key={tipo} value={tipo}>
-                    {tipo}
+                <SelectItem key="Todos" value="Todos">
+                  Todos
+                </SelectItem>
+                {serviceTypes.map((tipo) => (
+                  <SelectItem key={tipo.id} value={tipo.tipo}>
+                    {tipo.tipo}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -222,7 +224,9 @@ const Historico = () => {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      {servico.date ? new Date(servico.date).toLocaleDateString('pt-BR') : ""}
+                      {servico.date
+                        ? servico.date.split("-").reverse().join("/")
+                        : ""}
                     </div>
                   </TableCell>
                   <TableCell>{getServicoTipo(servico.service)}</TableCell>

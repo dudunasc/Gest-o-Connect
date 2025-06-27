@@ -15,7 +15,7 @@ const dashboardDataDefault = {
     },
     {
       title: "Nossos serviços",
-      value: "6",
+      value: "0",
       icon: Package,
       color: "bg-blue-500"
     },
@@ -62,6 +62,7 @@ const recentServices = [
 
 const Index = () => {
   const [clientCount, setClientCount] = useState(0);
+  const [serviceCount, setServiceCount] = useState(0);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -71,13 +72,25 @@ const Index = () => {
     fetchClients();
   }, []);
 
+  useEffect(() => {
+    const fetchServices = async () => {
+      const querySnapshot = await getDocs(collection(db, "servicos"));
+      setServiceCount(querySnapshot.size);
+    };
+    fetchServices();
+  }, []);
+
   const dashboardData = {
     ...dashboardDataDefault,
-    stats: dashboardDataDefault.stats.map((stat) =>
-      stat.title === "Clientes"
-        ? { ...stat, value: clientCount.toString() }
-        : stat
-    ),
+    stats: dashboardDataDefault.stats.map((stat) => {
+      if (stat.title === "Clientes") {
+        return { ...stat, value: clientCount.toString() };
+      }
+      if (stat.title === "Nossos serviços") {
+        return { ...stat, value: serviceCount.toString() };
+      }
+      return stat;
+    }),
   };
 
   return (
@@ -165,6 +178,6 @@ const Index = () => {
       </Card>
     </div>
   );
-};
+}
 
 export default Index;

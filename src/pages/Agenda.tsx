@@ -1,5 +1,6 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { collection, getDocs, addDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -12,26 +13,6 @@ import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const mockServices = [
-  {
-    id: 1,
-    client: "Erica Santos",
-    service: "Limpeza a seco",
-    date: "03/05/2025",
-    time: "10:00",
-    location: "Rua Dulcinéia da 2ª direita",
-    status: "Em aberto"
-  }
-];
-
-const serviceTypes = [
-  "Dedetização",
-  "Higienização",
-  "Limpeza a Vapor",
-  "Limpeza a Seco",
-  "Limpeza com Extração"
-];
-
 const Agenda = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -43,17 +24,77 @@ const Agenda = () => {
     time: "",
     location: ""
   });
+  const [services, setServices] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
 
-  const handleAddService = () => {
-    console.log("Novo serviço:", newService);
-    setIsDialogOpen(false);
-    setNewService({
-      client: "",
-      service: "",
-      date: "",
-      time: "",
-      location: ""
-    });
+  useEffect(() => {
+    const fetchServices = async () => {
+      const querySnapshot = await getDocs(collection(db, "servicos"));
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setServices(data);
+    };
+    fetchServices();
+  }, []);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      const querySnapshot = await getDocs(collection(db, "clientes"));
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setClients(data);
+    };
+    fetchClients();
+  }, []);
+
+  useEffect(() => {
+    const fetchServiceTypes = async () => {
+      const querySnapshot = await getDocs(collection(db, "servicos"));
+      const tipos = Array.from(
+        new Set(querySnapshot.docs.map(doc => doc.data().tipo))
+      ).filter(Boolean);
+      setServiceTypes(tipos as string[]);
+    };
+    fetchServiceTypes();
+  }, []);
+
+  const handleAddService = async () => {
+    if (!newService.client || !newService.service || !newService.date || !newService.time || !newService.location) {
+      alert("Preencha todos os campos obrigatórios!");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "servicos"), {
+        client: newService.client,
+        service: newService.service,
+        date: newService.date,
+        time: newService.time,
+        location: newService.location,
+        status: "Agendado"
+      });
+      const querySnapshot = await getDocs(collection(db, "servicos"));
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setServices(data);
+      setIsDialogOpen(false);
+      setNewService({
+        client: "",
+        service: "",
+        date: "",
+        time: "",
+        location: ""
+      });
+    } catch (error) {
+      alert("Erro ao salvar agendamento!");
+    }
   };
 
   const navigateMonth = (direction: number) => {
@@ -85,30 +126,40 @@ const Agenda = () => {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="client">Cliente *</Label>
-                <Input
-                  id="client"
+                <Select
                   value={newService.client}
-                  onChange={(e) => setNewService({...newService, client: e.target.value})}
-                  placeholder="Nome do cliente"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="service">Serviço *</Label>
-                <Select value={newService.service} onValueChange={(value) => setNewService({...newService, service: value})}>
+                  onValueChange={(value) => setNewService({ ...newService, client: value })}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder="Selecione o cliente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {serviceTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-
+              <div>
+                <Label htmlFor="service">Serviço *</Label>
+                <Select
+                  value={newService.service}
+                  onValueChange={(value) => setNewService({ ...newService, service: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceTypes.map((tipo) => (
+                      <SelectItem key={tipo} value={tipo}>
+                        {tipo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="date">Data *</Label>
@@ -116,7 +167,7 @@ const Agenda = () => {
                     id="date"
                     type="date"
                     value={newService.date}
-                    onChange={(e) => setNewService({...newService, date: e.target.value})}
+                    onChange={(e) => setNewService({ ...newService, date: e.target.value })}
                   />
                 </div>
                 <div>
@@ -125,21 +176,19 @@ const Agenda = () => {
                     id="time"
                     type="time"
                     value={newService.time}
-                    onChange={(e) => setNewService({...newService, time: e.target.value})}
+                    onChange={(e) => setNewService({ ...newService, time: e.target.value })}
                   />
                 </div>
               </div>
-
               <div>
                 <Label htmlFor="location">Local *</Label>
                 <Textarea
                   id="location"
                   value={newService.location}
-                  onChange={(e) => setNewService({...newService, location: e.target.value})}
+                  onChange={(e) => setNewService({ ...newService, location: e.target.value })}
                   placeholder="Endereço do serviço"
                 />
               </div>
-
               <div className="flex gap-2 pt-4">
                 <Button variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
@@ -152,9 +201,7 @@ const Agenda = () => {
           </DialogContent>
         </Dialog>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-       
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -182,7 +229,6 @@ const Agenda = () => {
             />
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Serviços do Dia</CardTitle>
@@ -194,26 +240,36 @@ const Agenda = () => {
                   {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
                 </p>
               )}
-              {mockServices.length === 0 ? (
+              {services.filter(service =>
+                service.date === format(selectedDate ?? new Date(), "yyyy-MM-dd")
+              ).length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   Nenhum serviço agendado para esta data
                 </p>
               ) : (
-                mockServices.map((service) => (
-                  <div key={service.id} className="p-4 border rounded-lg space-y-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{service.client}</p>
-                        <p className="text-sm text-muted-foreground">{service.service}</p>
-                        <p className="text-sm text-muted-foreground">{service.time}</p>
-                        <p className="text-sm text-muted-foreground">{service.location}</p>
+                services
+                  .filter(service =>
+                    service.date === format(selectedDate ?? new Date(), "yyyy-MM-dd")
+                  )
+                  .map((service) => (
+                    <div key={service.id} className="p-4 border rounded-lg space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">
+                            {clients.find((c) => c.id === service.client)?.name || "Cliente"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {service.service || "Serviço"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{service.time}</p>
+                          <p className="text-sm text-muted-foreground">{service.location}</p>
+                        </div>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          {service.status}
+                        </span>
                       </div>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        {service.status}
-                      </span>
                     </div>
-                  </div>
-                ))
+                  ))
               )}
             </div>
           </CardContent>

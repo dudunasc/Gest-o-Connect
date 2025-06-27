@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Search, Phone, Mail, MapPin } from "lucide-react";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 interface Client {
@@ -16,7 +16,6 @@ interface Client {
   email?: string;
   address?: string;
   services?: number;
-  lastService?: string;
 }
 
 function formatPhone(value: string) {
@@ -50,6 +49,12 @@ const Clientes = () => {
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editClient, setEditClient] = useState<Client | null>(null);
+
+  // Novo: armazenar histórico para contar serviços realizados
+  const [historico, setHistorico] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchClients = async () => {
       const querySnapshot = await getDocs(collection(db, "clientes"));
@@ -61,15 +66,28 @@ const Clientes = () => {
           cpf: data.cpf ?? "",
           phone: data.phone ?? "",
           email: data.email ?? "",
-          address: data.address ?? "",
-          services: data.services ?? 0,
-          lastService: data.lastService ?? ""
+          address: data.address ?? ""
         } as Client;
       });
       setClients(clientsList);
     };
     fetchClients();
   }, []);
+
+  useEffect(() => {
+    const fetchHistorico = async () => {
+      const agendSnap = await getDocs(collection(db, "agendamentos"));
+      setHistorico(agendSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    };
+    fetchHistorico();
+  }, []);
+
+  // Conta serviços realizados por cliente
+  const getServicosRealizados = (clientId: string) => {
+    return historico.filter(
+      (item) => item.client === clientId && item.status === "Concluído"
+    ).length;
+  };
 
   const handleAddClient = async () => {
     if (newClient.phone.replace(/\D/g, "").length !== 11) {
@@ -100,9 +118,7 @@ const Clientes = () => {
           cpf: data.cpf ?? "",
           phone: data.phone ?? "",
           email: data.email ?? "",
-          address: data.address ?? "",
-          services: data.services ?? 0,
-          lastService: data.lastService ?? ""
+          address: data.address ?? ""
         } as Client;
       });
       setClients(clientsList);
@@ -123,6 +139,41 @@ const Clientes = () => {
     }
   };
 
+  const handleEditClient = (client: Client) => {
+    setEditClient(client);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEditClient = async () => {
+    if (!editClient) return;
+    if (editClient.phone.replace(/\D/g, "").length !== 11) {
+      alert("O telefone deve conter 11 dígitos.");
+      return;
+    }
+    if (editClient.cpf.replace(/\D/g, "").length !== 11) {
+      alert("O CPF deve conter 11 dígitos.");
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "clientes", editClient.id), {
+        name: editClient.name,
+        cpf: editClient.cpf,
+        phone: editClient.phone,
+        email: editClient.email,
+        address: editClient.address
+      });
+      setClients((prev) =>
+        prev.map((c) => (c.id === editClient.id ? { ...editClient } : c))
+      );
+      setIsEditDialogOpen(false);
+      setEditClient(null);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+    } catch (error) {
+      alert("Erro ao salvar alterações!");
+    }
+  };
+
   const filteredClients = clients.filter(client =>
     client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone?.includes(searchTerm) ||
@@ -133,7 +184,7 @@ const Clientes = () => {
     <>
       {showSuccess && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow z-50 transition">
-          Cliente cadastrado com sucesso!
+          Cliente cadastrado/alterado com sucesso!
         </div>
       )}
 
@@ -165,6 +216,81 @@ const Clientes = () => {
               Excluir
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Cliente</DialogTitle>
+          </DialogHeader>
+          {editClient && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Nome *</Label>
+                <Input
+                  id="edit-name"
+                  value={editClient.name}
+                  onChange={(e) => setEditClient({ ...editClient, name: e.target.value.slice(0, 30) })}
+                  placeholder="Nome completo"
+                  maxLength={30}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-cpf">CPF *</Label>
+                <Input
+                  id="edit-cpf"
+                  value={editClient.cpf}
+                  onChange={(e) => {
+                    const formatted = formatCPF(e.target.value);
+                    setEditClient({ ...editClient, cpf: formatted });
+                  }}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-phone">Telefone *</Label>
+                <Input
+                  id="edit-phone"
+                  value={editClient.phone}
+                  onChange={(e) => {
+                    const formatted = formatPhone(e.target.value);
+                    setEditClient({ ...editClient, phone: formatted });
+                  }}
+                  placeholder="(11) 99999-9999"
+                  maxLength={16}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editClient.email}
+                  onChange={(e) => setEditClient({ ...editClient, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-address">Endereço</Label>
+                <Input
+                  id="edit-address"
+                  value={editClient.address}
+                  onChange={(e) => setEditClient({ ...editClient, address: e.target.value })}
+                  placeholder="Endereço completo"
+                />
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" className="flex-1" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button className="flex-1" onClick={handleSaveEditClient}>
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -296,14 +422,14 @@ const Clientes = () => {
                 <div className="pt-4 border-t">
                   <div className="flex justify-between text-sm">
                     <span>Serviços realizados:</span>
-                    <span className="font-medium">{client.services}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Último serviço:</span>
-                    <span className="font-medium">{client.lastService}</span>
+                    <span className="font-medium">{getServicosRealizados(client.id)}</span>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full mt-4">
+                <Button
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={() => handleEditClient(client)}
+                >
                   Ver Detalhes
                 </Button>
                 <Button

@@ -48,6 +48,7 @@ const Index = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [serviceTypes, setServiceTypes] = useState<any[]>([]);
   const [chartData, setChartData] = useState<{ month: string, value: number }[]>([]);
+  const [agendamentos, setAgendamentos] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -68,15 +69,14 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAgendados = async () => {
+    const fetchAgendamentos = async () => {
       const querySnapshot = await getDocs(collection(db, "agendamentos"));
-      const agendados = querySnapshot.docs.filter(doc => {
-        const data = doc.data();
-        return (data.status || "").trim().toLowerCase() === "agendado";
-      });
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAgendamentos(data);
+      const agendados = data.filter(item => (item.status || "").trim().toLowerCase() === "agendado");
       setAgendadosCount(agendados.length);
     };
-    fetchAgendados();
+    fetchAgendamentos();
   }, []);
 
   useEffect(() => {
@@ -108,41 +108,35 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    const fetchUltimoServico = async () => {
-      const agendSnap = await getDocs(collection(db, "agendamentos"));
-      const agendConcluidos = agendSnap.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(a => (a.status || "").trim().toLowerCase() === "concluído" && a.date);
+    if (clients.length === 0 || serviceTypes.length === 0 || agendamentos.length === 0) return;
 
-      if (agendConcluidos.length === 0) {
-        setUltimoServico(null);
-        return;
-      }
+    const agendConcluidos = agendamentos
+      .filter(a => (a.status || "").trim().toLowerCase() === "concluído" && a.date);
 
-      agendConcluidos.sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.time || "00:00"}`);
-        const dateB = new Date(`${b.date}T${b.time || "00:00"}`);
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      const ultimo = agendConcluidos[0];
-      const cliente = clients.find(c => c.id === ultimo.client);
-      const servico = serviceTypes.find(s => s.id === ultimo.service);
-
-      setUltimoServico({
-        nome: cliente?.name || "Cliente",
-        servico: servico?.tipo || "Serviço",
-        data: ultimo.date,
-        horario: ultimo.time,
-        valor: ultimo.valor,
-        endereco: ultimo.location
-      });
-    };
-
-    if (clients.length > 0 && serviceTypes.length > 0) {
-      fetchUltimoServico();
+    if (agendConcluidos.length === 0) {
+      setUltimoServico(null);
+      return;
     }
-  }, [clients, serviceTypes]);
+
+    agendConcluidos.sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time || "00:00"}`);
+      const dateB = new Date(`${b.date}T${b.time || "00:00"}`);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    const ultimo = agendConcluidos[0];
+    const cliente = clients.find(c => c.id === ultimo.client);
+    const servico = serviceTypes.find(s => s.id === ultimo.service);
+
+    setUltimoServico({
+      nome: cliente?.name || "Cliente",
+      servico: servico?.tipo || "Serviço",
+      data: ultimo.date,
+      horario: ultimo.time,
+      valor: ultimo.valor,
+      endereco: ultimo.location
+    });
+  }, [clients, serviceTypes, agendamentos]);
 
   useEffect(() => {
     const fetchChartData = async () => {
@@ -261,7 +255,10 @@ const Index = () => {
               <div className="text-sm text-muted-foreground">{ultimoServico.servico}</div>
               <div className="text-sm text-muted-foreground">
                 {ultimoServico.data
-                  ? new Date(ultimoServico.data).toLocaleDateString("pt-BR")
+                  ? (() => {
+                      const [year, month, day] = ultimoServico.data.split("-");
+                      return `${day}/${month}/${year}`;
+                    })()
                   : ""}
                 {ultimoServico.horario ? ` - ${ultimoServico.horario}` : ""}
               </div>

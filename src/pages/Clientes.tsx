@@ -52,7 +52,7 @@ const Clientes = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editClient, setEditClient] = useState<Client | null>(null);
 
-  // Novo: armazenar histórico para contar serviços realizados
+  
   const [historico, setHistorico] = useState<any[]>([]);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ const Clientes = () => {
     fetchHistorico();
   }, []);
 
-  // Conta serviços realizados por cliente
+
   const getServicosRealizados = (clientId: string) => {
     return historico.filter(
       (item) => item.client === clientId && item.status === "Concluído"

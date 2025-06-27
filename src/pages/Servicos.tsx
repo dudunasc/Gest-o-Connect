@@ -123,7 +123,7 @@ const Servicos = () => {
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handleAddNew} className="bg-[#4880FF] hover:bg-[#2563eb]">
               <Plus className="h-4 w-4 mr-2" />
               Adicionar
             </Button>

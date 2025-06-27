@@ -16,25 +16,25 @@ const dashboardDataDefault = {
       title: "Clientes",
       value: "0",
       icon: Users,
-      color: "bg-blue-500"
+      color: "bg-[#4880FF]"
     },
     {
       title: "Nossos serviços",
       value: "0",
       icon: Package,
-      color: "bg-blue-500"
+      color: "bg-[#4880FF]"
     },
     {
       title: "Faturamento mensal",
       value: "R$ 0,00",
       icon: DollarSign,
-      color: "bg-blue-500"
+      color: "bg-[#4880FF]"
     },
     {
       title: "Serviços agendados",
       value: "0",
       icon: Clock,
-      color: "bg-blue-500"
+      color: "bg-[#4880FF]"
     }
   ]
 };

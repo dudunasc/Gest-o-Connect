@@ -38,6 +38,7 @@ const Chatbot = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [serviceFilter, setServiceFilter] = useState("all");
+  const [servicos, setServicos] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -46,23 +47,38 @@ const Chatbot = () => {
         id: doc.id,
         name: doc.data().name ?? "",
         phone: doc.data().phone?.replace(/\D/g, "") ?? "",
-        services: doc.data().services ?? ""
+        services: doc.data().services ?? [],
+        historico: doc.data().historico ?? []
       }));
       setClients(clientsList);
     };
     fetchClients();
   }, []);
 
+  useEffect(() => {
+    const fetchServicos = async () => {
+      const servicosSnap = await getDocs(collection(db, "servicos"));
+      const servicosList = servicosSnap.docs.map(doc => ({
+        id: doc.id,
+        tipo: doc.data().tipo
+      }));
+      setServicos(servicosList);
+    };
+    fetchServicos();
+  }, []);
+
   const filteredClients = clients.filter(client => {
     if (serviceFilter === "all") return true;
-    if (serviceFilter === "higienizacao") {
-      return (
-        typeof client.services === "string"
-          ? client.services.toLowerCase().includes("higienização")
-          : client.services === "Higienização"
-      );
+    if (Array.isArray(client.services)) {
+      return client.services.includes(serviceFilter);
     }
-    return true;
+    if (typeof client.services === "string") {
+      return client.services.toLowerCase().includes(serviceFilter.toLowerCase());
+    }
+    if (Array.isArray(client.historico)) {
+      return client.historico.some((h: any) => h.procedimento === serviceFilter);
+    }
+    return false;
   });
 
   const handleSendMessage = () => {
@@ -164,7 +180,11 @@ const Chatbot = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os serviços</SelectItem>
-                  <SelectItem value="higienizacao">Higienização</SelectItem>
+                  {servicos.map((servico) => (
+                    <SelectItem key={servico.id} value={servico.tipo}>
+                      {servico.tipo}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

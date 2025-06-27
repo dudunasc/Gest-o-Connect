@@ -257,7 +257,7 @@ const Agenda = () => {
         </Dialog>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 w-full h-[600px]">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>
@@ -273,14 +273,14 @@ const Agenda = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-full flex items-center justify-center">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
               month={currentMonth}
               onMonthChange={setCurrentMonth}
-              className="w-full"
+              className="w-full h-full"
             />
           </CardContent>
         </Card>

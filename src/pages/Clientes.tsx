@@ -278,7 +278,7 @@ const Clientes = () => {
                   id="edit-address"
                   value={editClient.address}
                   onChange={(e) => setEditClient({ ...editClient, address: e.target.value })}
-                  placeholder="Endereço completo"
+                  placeholder="Rua, Nº, Bairro, Cep"
                 />
               </div>
               <div className="flex gap-2 pt-4">
@@ -366,7 +366,7 @@ const Clientes = () => {
                     id="address"
                     value={newClient.address}
                     onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
-                    placeholder="Endereço completo"
+                    placeholder="Rua, Nº, Bairro, Cep"
                   />
                 </div>
                 <div className="flex gap-2 pt-4">

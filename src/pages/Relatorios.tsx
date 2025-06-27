@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Download, Calendar, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -68,17 +67,6 @@ const Relatorios = () => {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Em desenvolvimento...</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Sistema completo de relatórios em breve com gráficos interativos e análises avançadas.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 };

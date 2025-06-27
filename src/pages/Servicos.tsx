@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Plus, Edit, Trash2, Scissors } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
+import { db } from "@/firebaseConfig";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 
 interface Servico {
   id: string;
@@ -19,51 +27,8 @@ interface Servico {
   valor4: number;
 }
 
-const mockServicos: Servico[] = [
-  {
-    id: "1",
-    tipo: "Descoloração",
-    valor1: 90.00,
-    valor2: 95.00,
-    valor3: 80.00,
-    valor4: 85.00
-  },
-  {
-    id: "2",
-    tipo: "Hidratação",
-    valor1: 140.00,
-    valor2: 145.00,
-    valor3: 160.00,
-    valor4: 155.00
-  },
-  {
-    id: "3",
-    tipo: "Limpeza a Vapor",
-    valor1: 110.00,
-    valor2: 115.00,
-    valor3: 120.00,
-    valor4: 125.00
-  },
-  {
-    id: "4",
-    tipo: "Limpeza a Seco",
-    valor1: 145.00,
-    valor2: 150.00,
-    valor3: 155.00,
-    valor4: 160.00
-  },
-  {
-    id: "5",
-    tipo: "Limpeza com Extração",
-    valor1: 215.00,
-    valor2: 220.00,
-    valor3: 225.00,
-    valor4: 230.00
-  }
-];
-
 const Servicos = () => {
-  const [servicos, setServicos] = useState<Servico[]>(mockServicos);
+  const [servicos, setServicos] = useState<Servico[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingServico, setEditingServico] = useState<Servico | null>(null);
   const { toast } = useToast();
@@ -78,11 +43,27 @@ const Servicos = () => {
     }
   });
 
-  const onSubmit = (data: any) => {
-    if (editingServico) {
+  // Buscar serviços do Firestore ao carregar
+  useEffect(() => {
+    const fetchServicos = async () => {
+      const servicosCol = collection(db, "servicos");
+      const servicosSnapshot = await getDocs(servicosCol);
+      const servicosList = servicosSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Servico[];
+      setServicos(servicosList);
+    };
+    fetchServicos();
+  }, []);
 
-      setServicos(prev => prev.map(servico => 
-        servico.id === editingServico.id 
+  // Adicionar ou atualizar serviço no Firestore
+  const onSubmit = async (data: any) => {
+    if (editingServico) {
+      const servicoRef = doc(db, "servicos", editingServico.id);
+      await updateDoc(servicoRef, data);
+      setServicos(prev => prev.map(servico =>
+        servico.id === editingServico.id
           ? { ...servico, ...data }
           : servico
       ));
@@ -91,17 +72,13 @@ const Servicos = () => {
         description: "O serviço foi atualizado com sucesso.",
       });
     } else {
-      const novoServico: Servico = {
-        id: Date.now().toString(),
-        ...data
-      };
-      setServicos(prev => [...prev, novoServico]);
+      const docRef = await addDoc(collection(db, "servicos"), data);
+      setServicos(prev => [...prev, { id: docRef.id, ...data }]);
       toast({
         title: "Serviço adicionado",
         description: "O novo serviço foi adicionado com sucesso.",
       });
     }
-    
     setIsDialogOpen(false);
     setEditingServico(null);
     form.reset();
@@ -117,7 +94,9 @@ const Servicos = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  // Remover serviço do Firestore
+  const handleDelete = async (id: string) => {
+    await deleteDoc(doc(db, "servicos", id));
     setServicos(prev => prev.filter(servico => servico.id !== id));
     toast({
       title: "Serviço removido",

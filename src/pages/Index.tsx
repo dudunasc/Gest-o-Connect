@@ -1,13 +1,15 @@
-
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Package, DollarSign, Clock } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
-const dashboardData = {
+const dashboardDataDefault = {
   stats: [
     {
       title: "Clientes",
-      value: "61",
+      value: "0",
       icon: Users,
       color: "bg-blue-500"
     },
@@ -59,6 +61,25 @@ const recentServices = [
 ];
 
 const Index = () => {
+  const [clientCount, setClientCount] = useState(0);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      const querySnapshot = await getDocs(collection(db, "clientes"));
+      setClientCount(querySnapshot.size);
+    };
+    fetchClients();
+  }, []);
+
+  const dashboardData = {
+    ...dashboardDataDefault,
+    stats: dashboardDataDefault.stats.map((stat) =>
+      stat.title === "Clientes"
+        ? { ...stat, value: clientCount.toString() }
+        : stat
+    ),
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -145,6 +166,5 @@ const Index = () => {
     </div>
   );
 };
-
 
 export default Index;

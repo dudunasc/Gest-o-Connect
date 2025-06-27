@@ -49,26 +49,19 @@ const chartData = [
   { month: "Dez", value: 3100 }
 ];
 
-const recentServices = [
-  {
-    name: "Max Steel",
-    service: "Higienização - Sofá",
-    date: "23/04/2024 - 10:30AM",
-    location: "Cidade nova",
-    price: "R$60,00",
-    status: "Concluído"
-  }
-];
-
 const Index = () => {
   const [clientCount, setClientCount] = useState(0);
   const [serviceCount, setServiceCount] = useState(0);
   const [agendadosCount, setAgendadosCount] = useState(0);
   const [faturamentoMensal, setFaturamentoMensal] = useState(0);
+  const [ultimoServico, setUltimoServico] = useState<any>(null);
+  const [clients, setClients] = useState<any[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchClients = async () => {
       const querySnapshot = await getDocs(collection(db, "clientes"));
+      setClients(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setClientCount(querySnapshot.size);
     };
     fetchClients();
@@ -77,6 +70,7 @@ const Index = () => {
   useEffect(() => {
     const fetchServices = async () => {
       const querySnapshot = await getDocs(collection(db, "servicos"));
+      setServiceTypes(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setServiceCount(querySnapshot.size);
     };
     fetchServices();
@@ -121,6 +115,45 @@ const Index = () => {
     };
     fetchFaturamento();
   }, []);
+
+  useEffect(() => {
+    const fetchUltimoServico = async () => {
+      const agendSnap = await getDocs(collection(db, "agendamentos"));
+      const agendConcluidos = agendSnap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(a => (a.status || "").trim().toLowerCase() === "concluído" && a.date);
+
+      if (agendConcluidos.length === 0) {
+        setUltimoServico(null);
+        return;
+      }
+
+      // Ordena por data e hora (mais recente primeiro)
+      agendConcluidos.sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time || "00:00"}`);
+        const dateB = new Date(`${b.date}T${b.time || "00:00"}`);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      const ultimo = agendConcluidos[0];
+      const cliente = clients.find(c => c.id === ultimo.client);
+      const servico = serviceTypes.find(s => s.id === ultimo.service);
+
+      setUltimoServico({
+        nome: cliente?.name || "Cliente",
+        servico: servico?.tipo || "Serviço",
+        data: ultimo.date,
+        horario: ultimo.time,
+        valor: ultimo.valor,
+        endereco: ultimo.location
+      });
+    };
+
+    // Só busca quando já tiver clientes e tipos de serviço carregados
+    if (clients.length > 0 && serviceTypes.length > 0) {
+      fetchUltimoServico();
+    }
+  }, [clients, serviceTypes]);
 
   const dashboardData = {
     ...dashboardDataDefault,
@@ -199,29 +232,28 @@ const Index = () => {
           <CardTitle>Último Serviço</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {recentServices.map((service, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                    <Users className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{service.name}</p>
-                    <p className="text-sm text-muted-foreground">{service.service}</p>
-                    <p className="text-sm text-muted-foreground">{service.date}</p>
-                    <p className="text-sm text-muted-foreground">{service.location}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">{service.price}</p>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    {service.status}
-                  </span>
-                </div>
+          {ultimoServico ? (
+            <div className="space-y-2">
+              <div className="font-bold">{ultimoServico.nome}</div>
+              <div className="text-sm text-muted-foreground">{ultimoServico.servico}</div>
+              <div className="text-sm text-muted-foreground">
+                {ultimoServico.data
+                  ? new Date(ultimoServico.data).toLocaleDateString("pt-BR")
+                  : ""}
+                {ultimoServico.horario ? ` - ${ultimoServico.horario}` : ""}
               </div>
-            ))}
-          </div>
+              <div className="text-sm text-muted-foreground">
+                {ultimoServico.endereco}
+              </div>
+              <div className="text-green-700 font-semibold">
+                {ultimoServico.valor
+                  ? `Valor: R$ ${Number(ultimoServico.valor).toFixed(2).replace('.', ',')}`
+                  : "Você não recebeu valor por esse serviço"}
+              </div>
+            </div>
+          ) : (
+            <div className="text-muted-foreground">Nenhum serviço concluído encontrado.</div>
+          )}
         </CardContent>
       </Card>
     </div>

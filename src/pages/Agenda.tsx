@@ -22,11 +22,13 @@ const Agenda = () => {
     service: "",
     date: "",
     time: "",
-    location: ""
+    location: "",
+    valor: ""
   });
   const [services, setServices] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
-  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<any[]>([]);
+  const [showValorInput, setShowValorInput] = useState(false);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -55,16 +57,33 @@ const Agenda = () => {
   useEffect(() => {
     const fetchServiceTypes = async () => {
       const querySnapshot = await getDocs(collection(db, "servicos"));
-      const tipos = Array.from(
-        new Set(querySnapshot.docs.map(doc => doc.data().tipo))
-      ).filter(Boolean);
-      setServiceTypes(tipos as string[]);
+      const tipos = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setServiceTypes(tipos);
     };
     fetchServiceTypes();
   }, []);
 
+  const handleServiceChange = async (serviceId: string) => {
+    setNewService({ ...newService, service: serviceId, valor: "" });
+    setShowValorInput(true);
+  };
+
+  const getValoresServico = () => {
+    const servico = serviceTypes.find((s: any) => s.id === newService.service);
+    if (!servico) return [];
+    const valores = [];
+    if (servico.valor1) valores.push(servico.valor1);
+    if (servico.valor2) valores.push(servico.valor2);
+    if (servico.valor3) valores.push(servico.valor3);
+    if (servico.valor4) valores.push(servico.valor4);
+    return valores;
+  };
+
   const handleAddService = async () => {
-    if (!newService.client || !newService.service || !newService.date || !newService.time || !newService.location) {
+    if (!newService.client || !newService.service || !newService.date || !newService.time || !newService.location || !newService.valor) {
       alert("Preencha todos os campos obrigatórios!");
       return;
     }
@@ -75,6 +94,7 @@ const Agenda = () => {
         date: newService.date,
         time: newService.time,
         location: newService.location,
+        valor: newService.valor,
         status: "Agendado"
       });
       const querySnapshot = await getDocs(collection(db, "agendamentos"));
@@ -89,8 +109,10 @@ const Agenda = () => {
         service: "",
         date: "",
         time: "",
-        location: ""
+        location: "",
+        valor: ""
       });
+      setShowValorInput(false);
     } catch (error) {
       alert("Erro ao salvar agendamento!");
     }
@@ -159,20 +181,40 @@ const Agenda = () => {
                 <Label htmlFor="service">Serviço *</Label>
                 <Select
                   value={newService.service}
-                  onValueChange={(value) => setNewService({ ...newService, service: value })}
+                  onValueChange={handleServiceChange}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {serviceTypes.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
-                        {tipo}
+                    {serviceTypes.map((tipo: any) => (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.tipo}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              {showValorInput && (
+                <div>
+                  <Label htmlFor="valor">Valor *</Label>
+                  <Select
+                    value={newService.valor}
+                    onValueChange={(value) => setNewService({ ...newService, valor: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o valor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getValoresServico().map((valor, idx) => (
+                        <SelectItem key={idx} value={valor.toString()}>
+                          {`R$ ${Number(valor).toFixed(2).replace('.', ',')}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="date">Data *</Label>
@@ -203,7 +245,7 @@ const Agenda = () => {
                 />
               </div>
               <div className="flex gap-2 pt-4">
-                <Button variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
+                <Button variant="outline" className="flex-1" onClick={() => { setIsDialogOpen(false); setShowValorInput(false); }}>
                   Cancelar
                 </Button>
                 <Button className="flex-1" onClick={handleAddService}>
@@ -272,10 +314,13 @@ const Agenda = () => {
                             {clients.find((c) => c.id === service.client)?.name || "Cliente"}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {service.service || "Serviço"}
+                            {serviceTypes.find((s: any) => s.id === service.service)?.tipo || "Serviço"}
                           </p>
                           <p className="text-sm text-muted-foreground">{service.time}</p>
                           <p className="text-sm text-muted-foreground">{service.location}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {service.valor ? `Valor: R$ ${Number(service.valor).toFixed(2).replace('.', ',')}` : ""}
+                          </p>
                         </div>
                         {service.status === "Concluído" ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
